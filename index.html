@@ -78,35 +78,36 @@
     border-radius: 14px;
     padding: 16px 16px 8px 16px;
   }
+  .filter-box {
+    border: 1px solid #3a2a1e;
+    border-radius: 10px;
+    padding: 14px 16px;
+    margin-top: 14px;
+  }
+  .filter-box .panel-sub {
+    margin: 0 0 12px 0;
+  }
   .bulk-actions {
-    margin-top: 12px;
+    margin-top: 6px;
     display:flex;
     gap:10px;
     flex-wrap:wrap;
   }
   .bulk-btn {
     background: transparent;
-    color: #f5f0e8;
+    color: #a99a86;
     border: none;
     height: 38px;
     padding: 0;
     font-size: 14px;
-    font-weight: 700;
-    text-decoration: underline;
-    text-underline-offset: 3px;
+    font-weight: 600;
+    text-decoration: none;
     cursor: pointer;
     display: inline-flex;
     align-items: center;
   }
   .bulk-btn:hover {
-    color: #ffffff;
-  }
-  #noneBtn.bulk-btn {
-    color: #8a7c6b;
-    font-weight: 600;
-  }
-  #noneBtn.bulk-btn:hover {
-    color: #b8ab9a;
+    color: #d9cdbd;
   }
   .segmented-compact {
     height: 38px;
@@ -277,12 +278,14 @@
       <button class="seg-btn" data-val="flat">Бемоли</button>
       <button class="seg-btn" data-val="both">И двете</button>
     </div>
-    <p class="panel-sub panel-sub-inline">Кликни върху нота, за да я включиш/изключиш на грифа</p>
   </div>
-  <div class="legend" id="filterBar"></div>
-  <div class="bulk-actions">
-    <button id="allBtn" class="bulk-btn">Покажи всички</button>
-    <button id="noneBtn" class="bulk-btn">Скрий всички</button>
+  <div class="filter-box">
+    <p class="panel-sub">Кликни върху нота, за да я включиш/изключиш на грифа</p>
+    <div class="legend" id="filterBar"></div>
+    <div class="bulk-actions">
+      <button id="allBtn" class="bulk-btn">Покажи всички</button>
+      <button id="noneBtn" class="bulk-btn">Скрий всички</button>
+    </div>
   </div>
 </div>
 
@@ -635,6 +638,9 @@
     btn.addEventListener('click', function(){
       accidentalMode = this.getAttribute('data-val');
       document.querySelectorAll('#accidentalGroup .seg-btn').forEach(b => b.classList.toggle('active', b === this));
+      // При смяна на таб винаги показваме всички ноти от него - без запазени скривания
+      const filterNotes = (accidentalMode === "all") ? chromatic : accidentalNotes;
+      activeNotesByMode[accidentalMode] = new Set(filterNotes);
       trackEvent('change_accidental_mode', { accidental_mode_id: accidentalMode });
       renderBoard();
       renderFilterBar();
