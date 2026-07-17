@@ -64,9 +64,13 @@
     margin-bottom: 14px;
   }
   .panel-sub {
-    margin: -6px 0 12px 0;
+    margin: 12px 0 0 0;
     font-size: 13px;
     color: #8a7c6b;
+  }
+  .panel-sub-inline {
+    margin: 0;
+    align-self: center;
   }
   .board-panel {
     background: #201812;
@@ -75,21 +79,34 @@
     padding: 16px 16px 8px 16px;
   }
   .bulk-actions {
+    margin-top: 12px;
     display:flex;
     gap:10px;
     flex-wrap:wrap;
   }
   .bulk-btn {
-    background:#2e2118;
-    color:#f5f0e8;
-    border:1px solid #6b4c34;
+    background: transparent;
+    color: #f5f0e8;
+    border: none;
     height: 38px;
-    padding:0 14px;
-    border-radius:8px;
-    font-size:13px;
-    cursor:pointer;
-    display:inline-flex;
-    align-items:center;
+    padding: 0;
+    font-size: 14px;
+    font-weight: 700;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+  }
+  .bulk-btn:hover {
+    color: #ffffff;
+  }
+  #noneBtn.bulk-btn {
+    color: #8a7c6b;
+    font-weight: 600;
+  }
+  #noneBtn.bulk-btn:hover {
+    color: #b8ab9a;
   }
   .segmented-compact {
     height: 38px;
@@ -116,10 +133,20 @@
     .panel, .board-panel { padding: 14px; border-radius: 12px; }
     .segmented { padding: 4px; }
     .seg-btn { padding: 10px 14px; font-size: 13px; }
-    .bulk-btn { padding: 10px 14px; font-size: 13px; }
+    .bulk-btn { font-size: 14px; }
     .legend .item { padding: 8px 12px 8px 8px; font-size: 14px; }
     .legend span.dot { width: 20px; height: 20px; }
     .swipe-hint { display: block; }
+    .segmented-compact {
+      height: auto;
+      flex-wrap: wrap;
+      overflow-x: visible;
+    }
+    .segmented-compact .seg-btn {
+      height: auto;
+      padding: 9px 13px;
+      font-size: 13.5px;
+    }
   }
   .legend {
     display: flex;
@@ -245,17 +272,18 @@
       <button class="seg-btn" data-val="bg">До, Ре, Ми</button>
     </div>
     <div class="segmented segmented-compact" id="accidentalGroup">
-      <button class="seg-btn active" data-val="sharp">Само диез (#)</button>
-      <button class="seg-btn" data-val="flat">Само бемол (♭)</button>
+      <button class="seg-btn active" data-val="all">Всички</button>
+      <button class="seg-btn" data-val="sharp">Диези</button>
+      <button class="seg-btn" data-val="flat">Бемоли</button>
       <button class="seg-btn" data-val="both">И двете</button>
     </div>
-    <div class="bulk-actions">
-      <button id="allBtn" class="bulk-btn">Покажи всички</button>
-      <button id="noneBtn" class="bulk-btn">Скрий всички</button>
-    </div>
+    <p class="panel-sub panel-sub-inline">Кликни върху нота, за да я включиш/изключиш на грифа</p>
   </div>
-  <p class="panel-sub">Кликни върху нота, за да я включиш/изключиш на грифа</p>
   <div class="legend" id="filterBar"></div>
+  <div class="bulk-actions">
+    <button id="allBtn" class="bulk-btn">Покажи всички</button>
+    <button id="noneBtn" class="bulk-btn">Скрий всички</button>
+  </div>
 </div>
 
 <div class="board-panel">
@@ -317,8 +345,15 @@
 
   let mode = "note"; // "note" или "type"
   let nameMode = "latin"; // "latin" или "bg"
-  let accidentalMode = "sharp"; // "sharp", "flat" или "both" - само за режим "По нота"
-  let activeNotes = new Set(chromatic); // всички ноти активни по подразбиране
+  let accidentalMode = "all"; // "all", "sharp", "flat" или "both" - само за режим "По нота"
+  const accidentalNotes = chromatic.filter(n => n.includes("#"));
+  // Отделен филтър за всеки таб на Диез/Бемол сегмента, за да не се пренасят изключванията между табовете
+  let activeNotesByMode = {
+    all:   new Set(chromatic),
+    sharp: new Set(accidentalNotes),
+    flat:  new Set(accidentalNotes),
+    both:  new Set(accidentalNotes)
+  };
   let activeTypes = new Set(["natural","sharp"]); // основни + диези активни по подразбиране (бемоли изключени)
 
   function displayName(note){
@@ -328,9 +363,9 @@
   // Пълен надпис на нота - за акцидентни ноти показва диез, бемол или и двете, според избора
   function fullNoteLabel(note){
     if(note.includes("#")){
-      if(accidentalMode === "sharp") return displayName(note);
       if(accidentalMode === "flat") return displayFlatName(note);
-      return displayName(note) + "/" + displayFlatName(note);
+      if(accidentalMode === "both") return displayName(note) + "/" + displayFlatName(note);
+      return displayName(note); // "all" и "sharp" - диезно изписване
     }
     return displayName(note);
   }
@@ -353,7 +388,9 @@
   function renderFilterBar(){
     const bar = document.getElementById('filterBar');
     if(mode === "note"){
-      bar.innerHTML = chromatic.map(n => {
+      const filterNotes = (accidentalMode === "all") ? chromatic : accidentalNotes;
+      const activeNotes = activeNotesByMode[accidentalMode];
+      bar.innerHTML = filterNotes.map(n => {
         const isOff = !activeNotes.has(n);
         const label = fullNoteLabel(n);
         const labelHtml = label.includes("/")
@@ -521,7 +558,8 @@
           strokeW = 3;
           strokeC = "#fff";
         } else if(mode === "note"){
-          if(!activeNotes.has(note)) continue; // изключена нота - не се рисува
+          if(!note.includes("#") && accidentalMode !== "all") continue; // основна нота, скрита извън режим "Всички"
+          if(!activeNotesByMode[accidentalMode].has(note)) continue; // изключена нота - не се рисува
           fillColor = noteColorByPitch[note];
           label = fullNoteLabel(note);
           strokeW = 1;
@@ -564,15 +602,19 @@
   renderFilterBar();
 
   document.getElementById('allBtn').addEventListener('click', function(){
-    if(mode === "note") activeNotes = new Set(chromatic);
-    else activeTypes = new Set(["natural","sharp","flat"]);
+    if(mode === "note"){
+      const filterNotes = (accidentalMode === "all") ? chromatic : accidentalNotes;
+      activeNotesByMode[accidentalMode] = new Set(filterNotes);
+    } else {
+      activeTypes = new Set(["natural","sharp","flat"]);
+    }
     trackEvent('filter_bulk_action', { action_id: 'show_all', filter_mode: mode });
     renderFilterBar();
     renderBoard();
   });
 
   document.getElementById('noneBtn').addEventListener('click', function(){
-    if(mode === "note") activeNotes = new Set();
+    if(mode === "note") activeNotesByMode[accidentalMode] = new Set();
     else activeTypes = new Set();
     trackEvent('filter_bulk_action', { action_id: 'hide_all', filter_mode: mode });
     renderFilterBar();
