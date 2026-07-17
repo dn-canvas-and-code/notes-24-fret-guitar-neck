@@ -238,6 +238,28 @@
     stroke: rgba(0,0,0,0.4);
     stroke-width: 1;
   }
+  .board-note:hover .note-circle {
+    opacity: 0.65;
+    stroke: #fff;
+    stroke-width: 2;
+  }
+  .disabled-note {
+    opacity: 0.14;
+  }
+  .disabled-note .note-circle {
+    filter: grayscale(100%) brightness(0.7);
+  }
+  .disabled-note .note-text {
+    opacity: 0.6;
+  }
+  .disabled-note:hover {
+    opacity: 0.4;
+  }
+  .disabled-note:hover .note-circle {
+    opacity: 1;
+    stroke: rgba(0,0,0,0.4);
+    stroke-width: 1;
+  }
   .note-text {
     font-size: 12px;
     font-weight: 700;
@@ -389,6 +411,21 @@
     return { label: displayFlatName(note), fill: typeColor.flat, strokeColor: "rgba(0,0,0,0.4)", strokeW: 1 };
   }
 
+  // Обща функция за превключване на нота - използва се и от филтър бадж-овете, и от клик директно на грифа
+  function toggleNote(n, source){
+    const activeNotes = activeNotesByMode[accidentalMode];
+    const willShow = !activeNotes.has(n);
+    if(activeNotes.has(n)) activeNotes.delete(n);
+    else activeNotes.add(n);
+    trackEvent('toggle_note_filter', {
+      note_id: n,
+      action: willShow ? 'show' : 'hide',
+      source: source || 'filter_bar'
+    });
+    renderFilterBar();
+    renderBoard();
+  }
+
   function renderFilterBar(){
     const bar = document.getElementById('filterBar');
     if(mode === "note"){
@@ -404,16 +441,7 @@
       }).join('');
       bar.querySelectorAll('.filter-item').forEach(el => {
         el.addEventListener('click', () => {
-          const n = el.getAttribute('data-note');
-          const willShow = !activeNotes.has(n);
-          if(activeNotes.has(n)) activeNotes.delete(n);
-          else activeNotes.add(n);
-          trackEvent('toggle_note_filter', {
-            note_id: n,
-            action: willShow ? 'show' : 'hide'
-          });
-          renderFilterBar();
-          renderBoard();
+          toggleNote(el.getAttribute('data-note'), 'filter_bar');
         });
       });
     } else {
@@ -554,6 +582,7 @@
         const isOpen = f === 0;
 
         let fillColor, label, strokeW, strokeC;
+        let isDisabled = false;
 
         if(isOpen){
           // Свободните струни винаги се показват, независимо от филтрите
@@ -563,7 +592,7 @@
           strokeC = "#fff";
         } else if(mode === "note"){
           if(!note.includes("#") && accidentalMode !== "all") continue; // основна нота, скрита извън режим "Всички"
-          if(!activeNotesByMode[accidentalMode].has(note)) continue; // изключена нота - не се рисува
+          isDisabled = !activeNotesByMode[accidentalMode].has(note); // изключена нота - показва се бледо, не изчезва
           fillColor = noteColorByPitch[note];
           label = fullNoteLabel(note);
           strokeW = 1;
@@ -585,6 +614,9 @@
           }
         }
 
+        const clickable = !isOpen;
+        const groupClass = "board-note" + (isDisabled ? " disabled-note" : "");
+        if(clickable) svg += `<g class="${groupClass}" data-pitch="${note}" style="cursor:pointer;">`;
         svg += `<circle class="note-circle" cx="${cx}" cy="${y}" r="15" fill="${fillColor}" stroke="${strokeC}" stroke-width="${strokeW}"/>`;
         if(label.includes("/")){
           const parts = label.split("/");
@@ -595,11 +627,18 @@
           const fontSize = (nameMode === "bg" && label.length > 3) ? 10 : 12;
           svg += `<text class="note-text" x="${cx}" y="${y+1}" font-size="${fontSize}">${label}</text>`;
         }
+        if(clickable) svg += `</g>`;
       }
     });
 
     svg += `</svg>`;
     document.getElementById('wrap').innerHTML = svg;
+
+    document.querySelectorAll('#wrap .board-note').forEach(el => {
+      el.addEventListener('click', () => {
+        toggleNote(el.getAttribute('data-pitch'), 'fretboard');
+      });
+    });
   }
 
   renderBoard();
