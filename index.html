@@ -62,7 +62,7 @@
   .panel-sub {
     margin: 12px 0 0 0;
     font-size: 13px;
-    color: #8a7c6b;
+    color: #b8ab9a;
   }
   .panel-sub-inline {
     margin: 0;
@@ -117,10 +117,57 @@
     align-items: center;
     font-size: 12.5px;
   }
+  .check-group {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .check-btn {
+    background: transparent;
+    color: #b8ab9a;
+    border: 1.5px solid #4a3324;
+    border-radius: 8px;
+    height: 38px;
+    padding: 0 14px 0 10px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-family: inherit;
+    transition: background 0.15s, border-color 0.15s, color 0.15s;
+  }
+  .check-btn:hover {
+    border-color: #8a6a4a;
+  }
+  .check-btn .check-mark {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 16px;
+    height: 16px;
+    border-radius: 4px;
+    border: 1.5px solid #6b5a48;
+    font-size: 11px;
+    line-height: 1;
+    color: transparent;
+    flex-shrink: 0;
+  }
+  .check-btn.active {
+    background: #4a3324;
+    border-color: #6b4c34;
+    color: #f5f0e8;
+  }
+  .check-btn.active .check-mark {
+    background: #d9a35a;
+    border-color: #d9a35a;
+    color: #241a13;
+  }
   .swipe-hint {
     display:none;
     font-size:12px;
-    color:#8a7c6b;
+    color:#b8ab9a;
     margin: 2px 0 10px 0;
   }
   @media (max-width: 640px) {
@@ -147,6 +194,11 @@
     .segmented-compact .seg-btn {
       height: auto;
       padding: 9px 13px;
+      font-size: 13.5px;
+    }
+    .check-btn {
+      height: auto;
+      padding: 9px 13px 9px 10px;
       font-size: 13.5px;
     }
   }
@@ -295,11 +347,10 @@
       <button class="seg-btn active" data-val="latin">C, D, E</button>
       <button class="seg-btn" data-val="bg">До, Ре, Ми</button>
     </div>
-    <div class="segmented segmented-compact" id="accidentalGroup">
-      <button class="seg-btn active" data-val="all">Всички</button>
-      <button class="seg-btn" data-val="sharp">Диези</button>
-      <button class="seg-btn" data-val="flat">Бемоли</button>
-      <button class="seg-btn" data-val="both">И двете</button>
+    <div class="check-group" id="categoryGroup">
+      <button class="check-btn active" data-val="natural"><span class="check-mark">✓</span>Основни</button>
+      <button class="check-btn" data-val="sharp"><span class="check-mark">✓</span>Диези</button>
+      <button class="check-btn" data-val="flat"><span class="check-mark">✓</span>Бемоли</button>
     </div>
   </div>
   <div class="filter-box">
@@ -313,7 +364,7 @@
 </div>
 
 <div class="board-panel">
-  <p class="swipe-hint">👉 Плъзни грифа настрани, за да видиш всичките 24 прага</p>
+  <p class="swipe-hint">👉 Плъзни грифа настрани, за да видиш всичките 24 прага. Кликни на нота направо на грифа, за да я скриеш/покажеш.</p>
   <div class="scroll-wrap" id="wrap"></div>
 </div>
 
@@ -371,27 +422,33 @@
 
   let mode = "note"; // "note" или "type"
   let nameMode = "latin"; // "latin" или "bg"
-  let accidentalMode = "all"; // "all", "sharp", "flat" или "both" - само за режим "По нота"
   const accidentalNotes = chromatic.filter(n => n.includes("#"));
-  // Отделен филтър за всеки таб на Диез/Бемол сегмента, за да не се пренасят изключванията между табовете
-  let activeNotesByMode = {
-    all:   new Set(chromatic),
-    sharp: new Set(accidentalNotes),
-    flat:  new Set(accidentalNotes),
-    both:  new Set(accidentalNotes)
-  };
+  const naturalNotes = chromatic.filter(n => !n.includes("#"));
+  // Чекбокс категории - кои групи ноти да се показват; по подразбиране само "Основни"
+  let visibleCategories = new Set(["natural"]);
+  // Кои конкретни ноти от видимите категории са включени (индивидуален филтър)
+  let activeNotes = new Set(naturalNotes);
   let activeTypes = new Set(["natural","sharp"]); // основни + диези активни по подразбиране (бемоли изключени)
+
+  function relevantNotes(){
+    let list = [];
+    if(visibleCategories.has("natural")) list = list.concat(naturalNotes);
+    if(visibleCategories.has("sharp") || visibleCategories.has("flat")) list = list.concat(accidentalNotes);
+    return list;
+  }
 
   function displayName(note){
     return nameMode === "bg" ? noteNameBG[note] : note;
   }
 
-  // Пълен надпис на нота - за акцидентни ноти показва диез, бемол или и двете, според избора
+  // Пълен надпис на нота - за акцидентни ноти показва диез, бемол или и двете, според активните категории
   function fullNoteLabel(note){
     if(note.includes("#")){
-      if(accidentalMode === "flat") return displayFlatName(note);
-      if(accidentalMode === "both") return displayName(note) + "/" + displayFlatName(note);
-      return displayName(note); // "all" и "sharp" - диезно изписване
+      const showSharp = visibleCategories.has("sharp");
+      const showFlat = visibleCategories.has("flat");
+      if(showSharp && showFlat) return displayName(note) + "/" + displayFlatName(note);
+      if(showFlat) return displayFlatName(note);
+      return displayName(note); // по подразбиране диезно изписване
     }
     return displayName(note);
   }
@@ -413,7 +470,6 @@
 
   // Обща функция за превключване на нота - използва се и от филтър бадж-овете, и от клик директно на грифа
   function toggleNote(n, source){
-    const activeNotes = activeNotesByMode[accidentalMode];
     const willShow = !activeNotes.has(n);
     if(activeNotes.has(n)) activeNotes.delete(n);
     else activeNotes.add(n);
@@ -429,8 +485,7 @@
   function renderFilterBar(){
     const bar = document.getElementById('filterBar');
     if(mode === "note"){
-      const filterNotes = (accidentalMode === "all") ? chromatic : accidentalNotes;
-      const activeNotes = activeNotesByMode[accidentalMode];
+      const filterNotes = relevantNotes();
       bar.innerHTML = filterNotes.map(n => {
         const isOff = !activeNotes.has(n);
         const label = fullNoteLabel(n);
@@ -591,8 +646,10 @@
           strokeW = 3;
           strokeC = "#fff";
         } else if(mode === "note"){
-          if(!note.includes("#") && accidentalMode !== "all") continue; // основна нота, скрита извън режим "Всички"
-          isDisabled = !activeNotesByMode[accidentalMode].has(note); // изключена нота - показва се бледо, не изчезва
+          const isNatural = !note.includes("#");
+          if(isNatural && !visibleCategories.has("natural")) continue; // основна нота, скрита - категорията е изключена
+          if(!isNatural && !visibleCategories.has("sharp") && !visibleCategories.has("flat")) continue; // диез/бемол категориите са изключени
+          isDisabled = !activeNotes.has(note); // изключена нота - показва се бледо, не изчезва
           fillColor = noteColorByPitch[note];
           label = fullNoteLabel(note);
           strokeW = 1;
@@ -646,8 +703,7 @@
 
   document.getElementById('allBtn').addEventListener('click', function(){
     if(mode === "note"){
-      const filterNotes = (accidentalMode === "all") ? chromatic : accidentalNotes;
-      activeNotesByMode[accidentalMode] = new Set(filterNotes);
+      activeNotes = new Set(relevantNotes());
     } else {
       activeTypes = new Set(["natural","sharp","flat"]);
     }
@@ -657,7 +713,7 @@
   });
 
   document.getElementById('noneBtn').addEventListener('click', function(){
-    if(mode === "note") activeNotesByMode[accidentalMode] = new Set();
+    if(mode === "note") activeNotes = new Set();
     else activeTypes = new Set();
     trackEvent('filter_bulk_action', { action_id: 'hide_all', filter_mode: mode });
     renderFilterBar();
@@ -674,14 +730,15 @@
     });
   });
 
-  document.querySelectorAll('#accidentalGroup .seg-btn').forEach(btn => {
+  document.querySelectorAll('#categoryGroup .check-btn').forEach(btn => {
     btn.addEventListener('click', function(){
-      accidentalMode = this.getAttribute('data-val');
-      document.querySelectorAll('#accidentalGroup .seg-btn').forEach(b => b.classList.toggle('active', b === this));
-      // При смяна на таб винаги показваме всички ноти от него - без запазени скривания
-      const filterNotes = (accidentalMode === "all") ? chromatic : accidentalNotes;
-      activeNotesByMode[accidentalMode] = new Set(filterNotes);
-      trackEvent('change_accidental_mode', { accidental_mode_id: accidentalMode });
+      const val = this.getAttribute('data-val');
+      if(visibleCategories.has(val)) visibleCategories.delete(val);
+      else visibleCategories.add(val);
+      this.classList.toggle('active', visibleCategories.has(val));
+      // При смяна на категория винаги показваме всички ноти от новата комбинация - без запазени скривания
+      activeNotes = new Set(relevantNotes());
+      trackEvent('toggle_category', { category_id: val, active: visibleCategories.has(val) });
       renderBoard();
       renderFilterBar();
     });
