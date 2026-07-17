@@ -265,6 +265,13 @@
 
 <script>
 (function(){
+  // Изпраща събитие към Google Analytics, ако gtag е зареден (не гърми, ако е блокиран от ad-blocker)
+  function trackEvent(name, params){
+    if(typeof gtag === "function"){
+      gtag('event', name, params || {});
+    }
+  }
+
   const chromatic = ["E","F","F#","G","G#","A","A#","B","C","C#","D","D#"];
   const noteColorByPitch = {
     "E":  "#e6194b",
@@ -357,8 +364,13 @@
       bar.querySelectorAll('.filter-item').forEach(el => {
         el.addEventListener('click', () => {
           const n = el.getAttribute('data-note');
+          const willShow = !activeNotes.has(n);
           if(activeNotes.has(n)) activeNotes.delete(n);
           else activeNotes.add(n);
+          trackEvent('toggle_note_filter', {
+            note_id: n,
+            action: willShow ? 'show' : 'hide'
+          });
           renderFilterBar();
           renderBoard();
         });
@@ -371,8 +383,13 @@
       bar.querySelectorAll('.filter-item').forEach(el => {
         el.addEventListener('click', () => {
           const k = el.getAttribute('data-type');
+          const willShow = !activeTypes.has(k);
           if(activeTypes.has(k)) activeTypes.delete(k);
           else activeTypes.add(k);
+          trackEvent('toggle_type_filter', {
+            type_id: k,
+            action: willShow ? 'show' : 'hide'
+          });
           renderFilterBar();
           renderBoard();
         });
@@ -549,6 +566,7 @@
   document.getElementById('allBtn').addEventListener('click', function(){
     if(mode === "note") activeNotes = new Set(chromatic);
     else activeTypes = new Set(["natural","sharp","flat"]);
+    trackEvent('filter_bulk_action', { action_id: 'show_all', filter_mode: mode });
     renderFilterBar();
     renderBoard();
   });
@@ -556,6 +574,7 @@
   document.getElementById('noneBtn').addEventListener('click', function(){
     if(mode === "note") activeNotes = new Set();
     else activeTypes = new Set();
+    trackEvent('filter_bulk_action', { action_id: 'hide_all', filter_mode: mode });
     renderFilterBar();
     renderBoard();
   });
@@ -564,6 +583,7 @@
     btn.addEventListener('click', function(){
       nameMode = this.getAttribute('data-val');
       document.querySelectorAll('#nameSegment .seg-btn').forEach(b => b.classList.toggle('active', b === this));
+      trackEvent('change_name_mode', { name_mode_id: nameMode });
       renderBoard();
       renderFilterBar();
     });
@@ -573,6 +593,7 @@
     btn.addEventListener('click', function(){
       accidentalMode = this.getAttribute('data-val');
       document.querySelectorAll('#accidentalGroup .seg-btn').forEach(b => b.classList.toggle('active', b === this));
+      trackEvent('change_accidental_mode', { accidental_mode_id: accidentalMode });
       renderBoard();
       renderFilterBar();
     });
