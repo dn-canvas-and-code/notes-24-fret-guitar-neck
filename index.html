@@ -771,24 +771,25 @@
         const groupClass = "board-note" + (isDisabled ? " disabled-note" : "");
         const clickable = !isOpen;
         const middleLineY = topLineY + lineSpacing*2; // средна (3-та) линия на стана
+        const displayColor = isDisabled ? "#5c4a3a" : fillColor; // монохромно за изключени ноти, като на грифа
 
         svg += ledgerSvg;
         if(clickable) svg += `<g class="${groupClass}" data-pitch="${note.pc}" style="cursor:pointer;">`;
         if(spelling.accidental){
           const accSymbol = spelling.accidental === "#" ? "♯" : "♭";
-          svg += `<text x="${cx-13}" y="${cy+4}" font-size="13" fill="${fillColor}" text-anchor="middle">${accSymbol}</text>`;
+          svg += `<text x="${cx-13}" y="${cy+4}" font-size="13" fill="${displayColor}" text-anchor="middle">${accSymbol}</text>`;
         }
         // стълбче на нотата - надолу, ако главата е на/над средната линия, иначе нагоре
         const stemLen = lineSpacing*3.3;
         if(cy <= middleLineY){
-          svg += `<line x1="${cx-6.6}" y1="${cy+0.5}" x2="${cx-6.6}" y2="${cy+stemLen}" stroke="${fillColor}" stroke-width="1.4"/>`;
+          svg += `<line x1="${cx-6.6}" y1="${cy+0.5}" x2="${cx-6.6}" y2="${cy+stemLen}" stroke="${displayColor}" stroke-width="1.4"/>`;
         } else {
-          svg += `<line x1="${cx+6.6}" y1="${cy-0.5}" x2="${cx+6.6}" y2="${cy-stemLen}" stroke="${fillColor}" stroke-width="1.4"/>`;
+          svg += `<line x1="${cx+6.6}" y1="${cy-0.5}" x2="${cx+6.6}" y2="${cy-stemLen}" stroke="${displayColor}" stroke-width="1.4"/>`;
         }
-        svg += `<ellipse cx="${cx}" cy="${cy}" rx="7" ry="5.5" fill="${fillColor}" stroke="#000" stroke-width="0.6" transform="rotate(-18 ${cx} ${cy})"/>`;
+        svg += `<ellipse class="note-circle" cx="${cx}" cy="${cy}" rx="7" ry="5.5" fill="${displayColor}" stroke="#000" stroke-width="0.6" transform="rotate(-18 ${cx} ${cy})"/>`;
         // името на нотата под петолинието (само на кирилица, класическа китара) - позицията се адаптира при ниски ноти
         const labelY = Math.max(gridBottom+16, cy+16);
-        svg += `<text x="${cx}" y="${labelY}" text-anchor="middle" font-size="10" font-weight="700" fill="${fillColor}">${displayName(note.pc)}</text>`;
+        svg += `<text x="${cx}" y="${labelY}" text-anchor="middle" font-size="10" font-weight="700" fill="${displayColor}">${displayName(note.pc)}</text>`;
         if(clickable) svg += `</g>`;
       }
     });
