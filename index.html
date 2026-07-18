@@ -821,12 +821,16 @@
     svg += `<text x="${openColX}" y="${topMargin-22}" text-anchor="middle" font-size="12" font-weight="700" fill="#f5f0e8">Свободни струни</text>`;
     svg += `<line x1="${(openColX+boardX)/2}" y1="${topMargin-14}" x2="${(openColX+boardX)/2}" y2="${lastStringY+14}" stroke="#6b4c34" stroke-width="1.5" stroke-dasharray="4,4"/>`;
 
-    // wood grain pattern definition
+    // wood grain pattern definition - леко по-светъл тон за класическа китара, за по-лесна ориентация
+    const isClassicalBoard = guitarType === "classical";
+    const woodTop = isClassicalBoard ? "#5a4230" : "#4a3324";
+    const woodMid = isClassicalBoard ? "#4c3628" : "#3d2a1e";
+    const woodBottom = isClassicalBoard ? "#40291b" : "#331f16";
     svg += `<defs>
       <linearGradient id="woodBase" x1="0%" y1="0%" x2="0%" y2="100%">
-        <stop offset="0%" stop-color="#4a3324"/>
-        <stop offset="50%" stop-color="#3d2a1e"/>
-        <stop offset="100%" stop-color="#331f16"/>
+        <stop offset="0%" stop-color="${woodTop}"/>
+        <stop offset="50%" stop-color="${woodMid}"/>
+        <stop offset="100%" stop-color="${woodBottom}"/>
       </linearGradient>
       <pattern id="woodGrain" width="180" height="${boardH}" patternUnits="userSpaceOnUse">
         <rect width="180" height="${boardH}" fill="url(#woodBase)"/>
