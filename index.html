@@ -344,7 +344,7 @@
 <h1 id="pageTitle">Гриф Мастер</h1>
 
 <div class="tab-group" id="guitarTypeSegment">
-  <button class="tab-btn active" data-val="electric">
+  <button class="tab-btn" data-val="electric">
     <span class="tab-main">Електрическа китара</span>
     <span class="tab-sub">6 струни &nbsp;|&nbsp; 24 прага</span>
   </button>
@@ -358,7 +358,7 @@
   <div class="panel-title-row">
     <div class="segmented segmented-compact" id="mainViewSegment"></div>
     <div class="segmented segmented-compact" id="categoryGroup">
-      <button class="seg-btn active" data-val="natural">Основни</button>
+      <button class="seg-btn" data-val="natural">Основни</button>
       <button class="seg-btn" data-val="sharp">Диези</button>
       <button class="seg-btn" data-val="flat">Бемоли</button>
     </div>
@@ -450,9 +450,9 @@
   const accidentalNotes = chromatic.filter(n => n.includes("#"));
   const naturalNotes = chromatic.filter(n => !n.includes("#"));
   // Категория ноти, показвана на грифа - single-select: само една активна наведнъж
-  let categoryMode = "natural";
+  let categoryMode = getSaved('grifMaster_categoryMode', "natural");
   // Кои конкретни ноти от видимата категория са включени (индивидуален филтър)
-  let activeNotes = new Set(naturalNotes);
+  let activeNotes = new Set(categoryMode === "natural" ? naturalNotes : accidentalNotes);
   let activeTypes = new Set(["natural","sharp"]); // основни + диези активни по подразбиране (бемоли изключени)
 
   function relevantNotes(){
@@ -573,9 +573,10 @@
     "E": notesForString("E")  // low E
   };
 
-  let guitarType = "electric"; // "electric" (24 прага) или "classical" (19 прага)
-  let viewMode = "fretboard"; // "fretboard" (цветни точки) или "staff" (нотен стан) - при старт е "electric", затова винаги гриф; за класическа се презарежда при смяна на таб
-  let numFrets = 24;
+  let guitarType = getSaved('grifMaster_guitarType', "electric"); // "electric" (24 прага) или "classical" (19 прага)
+  let numFrets = (guitarType === "classical") ? 19 : 24;
+  let viewMode = (guitarType === "classical") ? getSaved('grifMaster_viewMode', "staff") : "fretboard";
+  if(guitarType === "classical") nameMode = "bg"; // само До, Ре, Ми е достъпно за класическа китара
   const fretWidth = 56;
   const openColX = 28;
   const leftMargin = 88;
@@ -602,6 +603,7 @@
     markerFrets = [3,5,7,9,12,15,17,19,21,24].filter(f => f <= numFrets);
     doubleMarkerFrets = [12,24].filter(f => f <= numFrets);
   }
+  recomputeLayout();
 
   const stringThickness = { "e":1.2, "B":1.4, "G":1.7, "D":2.2, "A":2.7, "E":3.2 };
   const openLetter = { "e":"E", "B":"B", "G":"G", "D":"D", "A":"A", "E":"E" };
@@ -949,10 +951,17 @@
     });
   }
   renderMainViewSegment();
+  document.querySelectorAll('#guitarTypeSegment .tab-btn').forEach(b => {
+    b.classList.toggle('active', b.getAttribute('data-val') === guitarType);
+  });
+  document.querySelectorAll('#categoryGroup .seg-btn').forEach(b => {
+    b.classList.toggle('active', b.getAttribute('data-val') === categoryMode);
+  });
 
   document.querySelectorAll('#guitarTypeSegment .tab-btn').forEach(btn => {
     btn.addEventListener('click', function(){
       guitarType = this.getAttribute('data-val');
+      setSaved('grifMaster_guitarType', guitarType);
       document.querySelectorAll('#guitarTypeSegment .tab-btn').forEach(b => b.classList.toggle('active', b === this));
       numFrets = (guitarType === "classical") ? 19 : 24;
       recomputeLayout();
@@ -993,6 +1002,7 @@
       const val = this.getAttribute('data-val');
       if(categoryMode === val) return; // вече е избрана
       categoryMode = val;
+      setSaved('grifMaster_categoryMode', val);
       document.querySelectorAll('#categoryGroup .seg-btn').forEach(b => b.classList.toggle('active', b === this));
       // При смяна на категория винаги показваме всички ноти от нея - без запазени скривания
       activeNotes = new Set(relevantNotes());
