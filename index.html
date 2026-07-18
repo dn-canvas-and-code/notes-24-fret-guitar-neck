@@ -164,6 +164,14 @@
     border-color: #d9a35a;
     color: #241a13;
   }
+  .check-btn.locked {
+    cursor: not-allowed;
+  }
+  .check-btn.locked .check-mark {
+    background: transparent;
+    border-color: #a99a86;
+    color: #a99a86;
+  }
   .swipe-hint {
     display:none;
     font-size:12px;
@@ -730,15 +738,28 @@
     });
   });
 
+  function updateCategoryLockState(){
+    document.querySelectorAll('#categoryGroup .check-btn').forEach(btn => {
+      const val = btn.getAttribute('data-val');
+      const isLocked = visibleCategories.size === 1 && visibleCategories.has(val);
+      btn.classList.toggle('locked', isLocked);
+      btn.title = isLocked ? 'Трябва да има поне една избрана категория' : '';
+    });
+  }
+  updateCategoryLockState();
+
   document.querySelectorAll('#categoryGroup .check-btn').forEach(btn => {
     btn.addEventListener('click', function(){
       const val = this.getAttribute('data-val');
-      if(visibleCategories.has(val)) visibleCategories.delete(val);
+      const isTryingToUncheck = visibleCategories.has(val);
+      if(isTryingToUncheck && visibleCategories.size === 1) return; // не позволяваме изключване на последната активна категория
+      if(isTryingToUncheck) visibleCategories.delete(val);
       else visibleCategories.add(val);
       this.classList.toggle('active', visibleCategories.has(val));
       // При смяна на категория винаги показваме всички ноти от новата комбинация - без запазени скривания
       activeNotes = new Set(relevantNotes());
       trackEvent('toggle_category', { category_id: val, active: visibleCategories.has(val) });
+      updateCategoryLockState();
       renderBoard();
       renderFilterBar();
     });
