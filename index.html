@@ -616,8 +616,9 @@
     const bottomMarginStaff = 55;
     const totalHeight = topMarginStaff + systemHeight*6 + bottomMarginStaff;
 
-    const staffClefX = 18;   // позиция на виолиновия ключ
-    const staffOpenX = 70;   // позиция на нотата на свободната струна - вдясно от ключа, с падинг преди нута
+    const staffClefX = 14;   // позиция на виолиновия ключ
+    const staffOpenX = 78;   // позиция на нотата на свободната струна - повече падинг от ключа
+    const staffNutX = 102;   // локална позиция на нута за нотния изглед (независима от грифа), по-малко падинг вдясно на нотата
     const staffLineStartX = 8;
 
     const semitoneOf = {"C":0,"C#":1,"D":2,"D#":3,"E":4,"F":5,"F#":6,"G":7,"G#":8,"A":9,"A#":10,"B":11};
@@ -648,7 +649,7 @@
     }
 
     function fretX(f){
-      return (f === 0) ? staffOpenX : (leftMargin + fretWidth*(f-1) + fretWidth/2);
+      return (f === 0) ? staffOpenX : (staffNutX + fretWidth*(f-1) + fretWidth/2);
     }
 
     // Изчертава сол (виолинов) ключ с векторни примитиви - винаги се вижда, за разлика от Unicode музикални символи
@@ -665,7 +666,7 @@
 
     // номера на прагчетата - само един общ ред за цялата визуализация
     for(let f=1; f<=numFrets; f++){
-      const fx = leftMargin + fretWidth*(f-1) + fretWidth/2;
+      const fx = staffNutX + fretWidth*(f-1) + fretWidth/2;
       svg += `<text x="${fx}" y="20" text-anchor="middle" font-size="12" font-weight="700" fill="rgb(184, 171, 154)">${f}</text>`;
     }
 
@@ -678,7 +679,7 @@
       const gridTop = topLineY - lineSpacing*2.2;
       const gridBottom = bottomLineY + lineSpacing*2.2;
       for(let f=0; f<=numFrets; f++){
-        const fx = leftMargin + fretWidth*f;
+        const fx = staffNutX + fretWidth*f;
         const isNut = f === 0;
         svg += `<line x1="${fx}" y1="${gridTop}" x2="${fx}" y2="${gridBottom}" stroke="${isNut ? '#a08865' : '#6b5a48'}" stroke-width="${isNut ? 1.8 : 1.2}"/>`;
       }
