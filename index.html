@@ -415,7 +415,7 @@
     "D":  "#e6beff",
     "D#": "#9A6324"
   };
-  const openColor = "#e6194b"; // отворените струни винаги в този цвят, извън филтъра
+  const openColor = "#6b4c34"; // отворените струни - неутрален цвят (като активния таб от сегмента), извън филтъра
   const typeColor = {
     natural: "#f58231",  // оранжево
     sharp: "#4363d8",    // синьо
@@ -561,7 +561,7 @@
   };
 
   let guitarType = "electric"; // "electric" (24 прага) или "classical" (19 прага)
-  let viewMode = getSaved('grifMaster_viewMode', "staff"); // "fretboard" (цветни точки) или "staff" (нотен стан) - по подразбиране "Ноти" е водещ за класическа
+  let viewMode = "fretboard"; // "fretboard" (цветни точки) или "staff" (нотен стан) - при старт е "electric", затова винаги гриф; за класическа се презарежда при смяна на таб
   let numFrets = 24;
   const fretWidth = 56;
   const openColX = 55;
