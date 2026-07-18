@@ -738,7 +738,7 @@
         svg += `<ellipse class="note-circle" cx="${cx}" cy="${cy}" rx="7" ry="5.5" fill="${displayColor}" stroke="#000" stroke-width="0.6" transform="rotate(-18 ${cx} ${cy})"/>`;
         // името на нотата под петолинието - близо до стана, но с безопасен клирънс от самата нотна глава при ниски ноти
         const labelY = Math.max(gridBottom+8, cy+19);
-        svg += `<text x="${cx}" y="${labelY}" text-anchor="middle" font-size="12" font-weight="700" fill="${displayColor}">${displayName(note.pc)}</text>`;
+        svg += `<text x="${cx}" y="${labelY}" text-anchor="middle" font-size="12" font-weight="700" fill="${displayColor}">${fullNoteLabel(note.pc)}</text>`;
         if(clickable) svg += `</g>`;
       }
     });
