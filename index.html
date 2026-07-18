@@ -97,7 +97,7 @@
   }
   .bulk-btn {
     background: transparent;
-    color: #a99a86;
+    color: #d9cdbd;
     border: none;
     height: 38px;
     padding: 0;
@@ -109,7 +109,16 @@
     align-items: center;
   }
   .bulk-btn:hover {
-    color: #d9cdbd;
+    color: #f5f0e8;
+  }
+  .bulk-actions {
+    align-items: center;
+  }
+  .bulk-divider {
+    width: 1px;
+    height: 16px;
+    background: #5c4a3a;
+    display: inline-block;
   }
   .segmented-compact {
     height: 38px;
@@ -324,8 +333,8 @@
     font-family: 'Segoe UI', Arial, sans-serif;
   }
   .fret-num {
-    fill: #f5f0e8;
-    font-size: 15px;
+    fill: rgb(184, 171, 154);
+    font-size: 14px;
     font-weight: 700;
     text-anchor: middle;
   }
@@ -415,7 +424,7 @@
     "D":  "#e6beff",
     "D#": "#9A6324"
   };
-  const openColor = "#6b4c34"; // отворените струни - неутрален цвят (като активния таб от сегмента), извън филтъра
+  const openColor = "rgb(217, 163, 90)"; // отворените струни - извън филтъра
   const typeColor = {
     natural: "#f58231",  // оранжево
     sharp: "#4363d8",    // синьо
@@ -564,9 +573,9 @@
   let viewMode = "fretboard"; // "fretboard" (цветни точки) или "staff" (нотен стан) - при старт е "electric", затова винаги гриф; за класическа се презарежда при смяна на таб
   let numFrets = 24;
   const fretWidth = 56;
-  const openColX = 55;
-  const leftMargin = 115;
-  const topMargin = 46;
+  const openColX = 28;
+  const leftMargin = 88;
+  const topMargin = 72;
   const rowHeight = 44;
   let width = leftMargin + fretWidth * (numFrets + 1) + 20;
   let height = topMargin + rowHeight * 6 + 84;
@@ -603,12 +612,12 @@
     const staffTopPad = 58;
     const staffBottomPad = 50;
     const systemHeight = staffTopPad + lineSpacing*4 + staffBottomPad;
-    const topMarginStaff = 30;
+    const topMarginStaff = 22;
     const bottomMarginStaff = 55;
     const totalHeight = topMarginStaff + systemHeight*6 + bottomMarginStaff;
 
     const staffClefX = 18;   // позиция на виолиновия ключ
-    const staffOpenX = 76;   // позиция на нотата на свободната струна - вдясно от ключа
+    const staffOpenX = 70;   // позиция на нотата на свободната струна - вдясно от ключа, с падинг преди нута
     const staffLineStartX = 8;
 
     const semitoneOf = {"C":0,"C#":1,"D":2,"D#":3,"E":4,"F":5,"F#":6,"G":7,"G#":8,"A":9,"A#":10,"B":11};
@@ -654,6 +663,12 @@
     let svg = `<svg viewBox="0 0 ${width} ${totalHeight}" width="${width}" height="${totalHeight}" xmlns="http://www.w3.org/2000/svg">`;
     svg += `<rect x="0" y="0" width="${width}" height="${totalHeight}" fill="#1b1410"/>`;
 
+    // номера на прагчетата - само един общ ред за цялата визуализация
+    for(let f=1; f<=numFrets; f++){
+      const fx = leftMargin + fretWidth*(f-1) + fretWidth/2;
+      svg += `<text x="${fx}" y="20" text-anchor="middle" font-size="12" font-weight="700" fill="rgb(184, 171, 154)">${f}</text>`;
+    }
+
     stringsOrder.forEach((s, i) => {
       const sysTop = topMarginStaff + i*systemHeight;
       const topLineY = sysTop + staffTopPad;
@@ -665,7 +680,7 @@
       for(let f=0; f<=numFrets; f++){
         const fx = leftMargin + fretWidth*f;
         const isNut = f === 0;
-        svg += `<line x1="${fx}" y1="${gridTop}" x2="${fx}" y2="${gridBottom}" stroke="${isNut ? '#8a7460' : '#4a3324'}" stroke-width="${isNut ? 1.5 : 1}"/>`;
+        svg += `<line x1="${fx}" y1="${gridTop}" x2="${fx}" y2="${gridBottom}" stroke="${isNut ? '#a08865' : '#6b5a48'}" stroke-width="${isNut ? 1.8 : 1.2}"/>`;
       }
 
       for(let li=0; li<5; li++){
@@ -673,7 +688,7 @@
         svg += `<line x1="${staffLineStartX}" y1="${ly}" x2="${width-10}" y2="${ly}" stroke="#8a7460" stroke-width="1"/>`;
       }
 
-      svg += `<text x="${staffClefX}" y="${topLineY-8}" font-size="10" font-weight="700" fill="#8a7c6b">${stringOrdinal[s]} струна</text>`;
+      svg += `<text x="${staffClefX}" y="${topLineY-16}" font-size="11" font-weight="400" fill="rgb(184, 171, 154)">${stringOrdinal[s]} струна</text>`;
 
       svg += clefSVG(staffClefX+8, topLineY, bottomLineY, lineSpacing, "#8a7460");
 
@@ -721,9 +736,9 @@
           svg += `<line x1="${cx+6.6}" y1="${cy-0.5}" x2="${cx+6.6}" y2="${cy-stemLen}" stroke="${displayColor}" stroke-width="1.4"/>`;
         }
         svg += `<ellipse class="note-circle" cx="${cx}" cy="${cy}" rx="7" ry="5.5" fill="${displayColor}" stroke="#000" stroke-width="0.6" transform="rotate(-18 ${cx} ${cy})"/>`;
-        // името на нотата под петолинието (само на кирилица, класическа китара) - позицията се адаптира при ниски ноти
-        const labelY = Math.max(gridBottom+16, cy+16);
-        svg += `<text x="${cx}" y="${labelY}" text-anchor="middle" font-size="10" font-weight="700" fill="${displayColor}">${displayName(note.pc)}</text>`;
+        // името на нотата под петолинието - близо до стана, но с безопасен клирънс от самата нотна глава при ниски ноти
+        const labelY = Math.max(gridBottom+8, cy+19);
+        svg += `<text x="${cx}" y="${labelY}" text-anchor="middle" font-size="12" font-weight="700" fill="${displayColor}">${displayName(note.pc)}</text>`;
         if(clickable) svg += `</g>`;
       }
     });
@@ -753,8 +768,14 @@
 
     svg += `<rect x="0" y="0" width="${width}" height="${height}" fill="#1b1410"/>`;
 
-    svg += `<text x="${openColX}" y="${topMargin-22}" text-anchor="middle" font-size="12" font-weight="700" fill="#f5f0e8">Свободни струни</text>`;
+    svg += `<text x="${openColX}" y="${topMargin-42}" text-anchor="middle" font-size="11" font-weight="400" fill="rgb(184, 171, 154)"><tspan x="${openColX}" dy="0">Свободни</tspan><tspan x="${openColX}" dy="12">струни</tspan></text>`;
     svg += `<line x1="${(openColX+boardX)/2}" y1="${topMargin-14}" x2="${(openColX+boardX)/2}" y2="${lastStringY+14}" stroke="#6b4c34" stroke-width="1.5" stroke-dasharray="4,4"/>`;
+
+    // номера на всички прагчета над грифа (1, 2, 3, 4, 5, 6...)
+    for(let f=1; f<=numFrets; f++){
+      const fx = leftMargin + fretWidth*(f-1) + fretWidth/2;
+      svg += `<text x="${fx}" y="${topMargin-22}" text-anchor="middle" font-size="14" font-weight="700" fill="rgb(184, 171, 154)">${f}</text>`;
+    }
 
     // wood grain pattern definition - леко по-светъл тон за класическа китара, за по-лесна ориентация
     const isClassicalBoard = guitarType === "classical";
@@ -811,6 +832,7 @@
     stringsOrder.forEach((s, rowIdx) => {
       const y = topMargin + rowHeight*rowIdx + rowHeight/2 - 10;
       svg += `<line x1="${leftMargin}" y1="${y}" x2="${leftMargin+fretWidth*numFrets}" y2="${y}" stroke="#d8cfc0" stroke-width="${stringThickness[s]}"/>`;
+      svg += `<text x="${boardX-6}" y="${y+5}" text-anchor="end" font-size="14" font-weight="700" fill="rgb(184, 171, 154)">${rowIdx+1}</text>`;
 
       const notes = stringData[s];
       for(let f=0; f<=numFrets; f++){
