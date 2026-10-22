@@ -361,6 +361,7 @@
       <button class="seg-btn" data-val="natural">Основни</button>
       <button class="seg-btn" data-val="sharp">Диези</button>
       <button class="seg-btn" data-val="flat">Бемоли</button>
+      <button class="seg-btn" data-val="all">Всички</button>
     </div>
   </div>
   <div class="filter-box">
@@ -452,11 +453,18 @@
   // Категория ноти, показвана на грифа - single-select: само една активна наведнъж
   let categoryMode = getSaved('grifMaster_categoryMode', "natural");
   // Кои конкретни ноти от видимата категория са включени (индивидуален филтър)
-  let activeNotes = new Set(categoryMode === "natural" ? naturalNotes : accidentalNotes);
+  let activeNotes = new Set(relevantNotes());
   let activeTypes = new Set(["natural","sharp"]); // основни + диези активни по подразбиране (бемоли изключени)
 
   function relevantNotes(){
+    if(categoryMode === "all") return chromatic;
     return categoryMode === "natural" ? naturalNotes : accidentalNotes;
+  }
+
+  // Дали нота от дадения вид се показва при избраната категория ("Всички" показва и основните, и диезите/бемолите)
+  function categoryShows(isNatural){
+    if(categoryMode === "all") return true;
+    return categoryMode === "natural" ? isNatural : !isNatural;
   }
 
   function displayName(note){
@@ -466,6 +474,7 @@
   // Пълен надпис на нота - за акцидентни ноти показва диез или бемол според избраната категория
   function fullNoteLabel(note){
     if(note.includes("#")){
+      if(categoryMode === "all") return displayName(note) + "/" + displayFlatName(note);
       return categoryMode === "flat" ? displayFlatName(note) : displayName(note);
     }
     return displayName(note);
@@ -702,8 +711,7 @@
       for(let f=0; f<=numFrets; f++){
         const note = noteAt(s, f);
         const isNatural = !note.pc.includes("#");
-        if(isNatural && categoryMode !== "natural") continue;
-        if(!isNatural && categoryMode === "natural") continue;
+        if(!categoryShows(isNatural)) continue;
 
         const isOpen = f===0;
         const isDisabled = !isOpen && !activeNotes.has(note.pc);
@@ -745,7 +753,13 @@
         svg += `<ellipse class="note-circle" cx="${cx}" cy="${cy}" rx="7" ry="5.5" fill="${displayColor}" stroke="#000" stroke-width="0.6" transform="rotate(-18 ${cx} ${cy})"/>`;
         // името на нотата под петолинието - близо до стана, но с безопасен клирънс от самата нотна глава при ниски ноти
         const labelY = Math.max(gridBottom+8, cy+19);
-        svg += `<text x="${cx}" y="${labelY}" text-anchor="middle" font-size="12" font-weight="700" fill="${displayColor}">${fullNoteLabel(note.pc)}</text>`;
+        const staffLabel = fullNoteLabel(note.pc);
+        if(staffLabel.includes("/")){
+          const lp = staffLabel.split("/");
+          svg += `<text x="${cx}" y="${labelY}" text-anchor="middle" font-size="12" font-weight="700" fill="${displayColor}"><tspan x="${cx}" dy="0">${lp[0]}</tspan><tspan x="${cx}" dy="13">${lp[1]}</tspan></text>`;
+        } else {
+          svg += `<text x="${cx}" y="${labelY}" text-anchor="middle" font-size="12" font-weight="700" fill="${displayColor}">${staffLabel}</text>`;
+        }
         if(clickable) svg += `</g>`;
       }
     });
@@ -858,8 +872,7 @@
           strokeC = "#fff";
         } else if(mode === "note"){
           const isNatural = !note.includes("#");
-          if(isNatural && categoryMode !== "natural") continue; // основна нота, скрита - категорията е изключена
-          if(!isNatural && categoryMode === "natural") continue; // диез/бемол категорията е изключена
+          if(!categoryShows(isNatural)) continue; // нотата не е в избраната категория
           isDisabled = !activeNotes.has(note); // изключена нота - показва се бледо, не изчезва
           fillColor = noteColorByPitch[note];
           label = fullNoteLabel(note);
